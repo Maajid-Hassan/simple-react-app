@@ -1,0 +1,73 @@
+name: QA & Production Release
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build React App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build Application
+        run: npm run build
+      - name: Upload Build Artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-build
+          path: dist
+
+  deploy-qa:
+    name: Deploy to QA
+    needs: build
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: react-build
+          path: dist
+      - name: Deploy to Azure Static Web App (QA)
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.QA_SWA_TOKEN }}
+          action: upload
+          skip_app_build: true
+          app_location: dist
+          
+  deploy-prod:
+    name: Deploy to Production
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: react-build
+          path: dist
+      - name: Deploy to Azure Static Web App (Production)
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.PROD_SWA_TOKEN }}
+          action: upload
+          skip_app_build: true
+          app_location: dist
