@@ -70,7 +70,8 @@ export default function TaskItem({ task }) { // NOSONAR
     handleAddSubtask, handleToggleSubtask, handleDeleteSubtask,
     handleAddComment, spaces,
     theme,
-    handleShiftTaskOrder
+    handleShiftTaskOrder,
+    userSettings
   } = useTasks();
   const isLight = theme === 'lightblue' || theme === 'lightpurple';
   const completedColor = isLight ? 'rgba(100, 116, 139, 0.6)' : 'rgba(161, 161, 170, 0.6)';
@@ -159,7 +160,9 @@ export default function TaskItem({ task }) { // NOSONAR
         borderColor: isExpanded ? 'var(--border-main)' : 'var(--border-muted)',
         backgroundColor: isExpanded ? 'var(--bg-panel)' : 'var(--bg-card)',
       }}
-      className={`todo-card glass-panel p-4 rounded-2xl flex flex-col mb-3 group relative overflow-hidden transition-colors border select-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-pbg outline-none`}
+      className={`todo-card glass-panel ${
+        userSettings?.compactMode ? 'p-2.5 sm:p-3 mb-1.5' : 'p-4 mb-3'
+      } rounded-2xl flex flex-col group relative overflow-hidden transition-all border select-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-pbg outline-none`}
     >
       {/* Task card primary summary row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-1 min-w-0">

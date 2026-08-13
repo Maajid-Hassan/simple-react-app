@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, useEffect } from 'react';
 import { sampleTasks } from '../utils/sampleTasks';
+import { playCompletionSound } from '../utils/audio';
 
 const TaskContext = createContext();
 
@@ -46,8 +47,39 @@ export function TaskProvider({ children }) {
     localStorage.setItem('zenflow-theme', theme);
   }, [theme]);
 
+  // 1.5 User Settings State
+  const [userSettings, setUserSettings] = useState(() => {
+    const saved = localStorage.getItem('zenflow-user-settings');
+    return saved ? JSON.parse(saved) : {
+      defaultView: 'list',
+      hideCompleted: false,
+      soundEffects: true,
+      compactMode: false,
+      dailyGoal: 5,
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('zenflow-user-settings', JSON.stringify(userSettings));
+  }, [userSettings]);
+
+  const updateSetting = useCallback((key, value) => {
+    setUserSettings(prev => ({ ...prev, [key]: value }));
+  }, []);
+
   // 2. View and Space Configurations
-  const [activeView, setActiveView] = useState('list'); // 'list' | 'kanban' | 'calendar' | 'matrix' | 'dashboard'
+  const [activeView, setActiveView] = useState(() => {
+    const savedSettings = localStorage.getItem('zenflow-user-settings');
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.defaultView) return parsed.defaultView;
+      } catch (e) {
+        // fallback to list
+      }
+    }
+    return 'list';
+  }); // 'list' | 'kanban' | 'calendar' | 'matrix' | 'dashboard'
   const [activeSpace, setActiveSpace] = useState('all'); // 'all' | space.id
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [spaces, setSpaces] = useState(() => {
@@ -208,10 +240,14 @@ export function TaskProvider({ children }) {
     if (!task) return;
 
     const completedState = !task.completed;
+    if (completedState && userSettings.soundEffects) {
+      playCompletionSound();
+    }
+
     setTasks(prev => prev.map(item => (
       item.id === id ? { ...item, completed: completedState } : item
     )));
-  }, [tasks]);
+  }, [tasks, userSettings.soundEffects]);
 
   const handleDeleteTask = useCallback((id) => {
     const deletedTask = tasks.find(t => t.id === id);
@@ -296,10 +332,84 @@ export function TaskProvider({ children }) {
     setTasks(prev => prev.map(t => t.category === id ? { ...t, category: fallbackSpaceId } : t));
   }, [spaces]);
 
+  // Data Export & Import Operations
+  const handleExportJSON = useCallback(() => {
+    const exportData = {
+      version: '2.0',
+      exportedAt: new Date().toISOString(),
+      tasks,
+      spaces,
+      userSettings,
+      userProfile,
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zenflow-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [tasks, spaces, userSettings, userProfile]);
+
+  const handleExportCSV = useCallback(() => {
+    const headers = ['ID', 'Task Name', 'Completed', 'Category', 'Priority', 'Due Date', 'Created At'];
+    const rows = tasks.map(t => [
+      `"${t.id}"`,
+      `"${t.text.replace(/"/g, '""')}"`,
+      t.completed ? 'Yes' : 'No',
+      `"${t.category}"`,
+      `"${t.priority}"`,
+      `"${t.dueDate || ''}"`,
+      `"${t.createdAt}"`
+    ]);
+    const csvStr = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zenflow-tasks-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [tasks]);
+
+  const handleImportJSON = useCallback((jsonString) => {
+    try {
+      const parsed = JSON.parse(jsonString);
+      if (parsed && Array.isArray(parsed.tasks)) {
+        setTasks(parsed.tasks);
+        if (Array.isArray(parsed.spaces)) setSpaces(parsed.spaces);
+        if (parsed.userSettings) setUserSettings(parsed.userSettings);
+        if (parsed.userProfile) setUserProfile(parsed.userProfile);
+        return { success: true, count: parsed.tasks.length };
+      }
+      return { success: false, error: 'Invalid file format: missing tasks array.' };
+    } catch (e) {
+      return { success: false, error: 'Failed to parse JSON file.' };
+    }
+  }, []);
+
+  const handleResetSampleData = useCallback(() => {
+    localStorage.removeItem('zenflow-tasks-v2');
+    localStorage.removeItem('zenflow-spaces');
+    localStorage.removeItem('zenflow-user-settings');
+    window.location.reload();
+  }, []);
+
+  const handleClearAllData = useCallback(() => {
+    setTasks([]);
+  }, []);
+
   const contextValue = useMemo(() => ({
     // Theme
     theme,
     setTheme,
+    // Settings
+    userSettings,
+    updateSetting,
     // Views/Spaces
     activeView,
     setActiveView,
@@ -345,15 +455,21 @@ export function TaskProvider({ children }) {
     // Screen reader announcements
     srAnnouncement,
     announceToScreenReader,
+    // Data Management
+    handleExportJSON,
+    handleExportCSV,
+    handleImportJSON,
+    handleResetSampleData,
+    handleClearAllData,
   }), [
-    theme, activeView, activeSpace, isMobileSidebarOpen, spaces, tasks,
+    theme, userSettings, updateSetting, activeView, activeSpace, isMobileSidebarOpen, spaces, tasks,
     filter, searchQuery, priorityFilter, userProfile, toasts,
     srAnnouncement, handleAddSpace, handleDeleteSpace, handleAddTask,
     handleToggleComplete, handleDeleteTask, handleUpdateTaskText,
     handleUpdateTaskDescription, handleUpdateTaskMeta, handleAddSubtask,
     handleToggleSubtask, handleDeleteSubtask, handleAddComment, handleUndo,
-    pauseToastTimer, resumeToastTimer,
-    handleShiftTaskOrder, announceToScreenReader
+    pauseToastTimer, resumeToastTimer, handleShiftTaskOrder, announceToScreenReader,
+    handleExportJSON, handleExportCSV, handleImportJSON, handleResetSampleData, handleClearAllData
   ]);
 
   return (
