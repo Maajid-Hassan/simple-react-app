@@ -1,0 +1,54 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Gradient for the rounded background -->
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#55a4f7" />
+            <stop offset="100%" stop-color="#786df5" />
+        </linearGradient>
+        
+        <!-- Drop shadow for the inner white logo -->
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.15" />
+        </filter>
+    </defs>
+
+    <!-- Base rounded app icon -->
+    <rect x="64" y="64" width="384" height="384" rx="85" ry="85" fill="url(#bgGrad)" />
+
+    <!-- 
+      Combined white logo: Letter 'Z', 'o' ring, and trailing dot.
+      Drawn as a single compound path to allow seamless merging and single drop shadow application. 
+      Uses nonzero fill-rule with explicit clockwise (outer) and counter-clockwise (inner hole) paths.
+    -->
+    <path d="
+            M 142 167 
+            L 290 167 
+            L 290 213 
+            L 207 299 
+            L 275 299 
+            L 275 345 
+            L 142 345 
+            L 142 299 
+            L 225 213 
+            L 142 213 
+            Z 
+            
+            M 302 281 
+            a 32 32 0 1 1 0 64 
+            a 32 32 0 1 1 0 -64 
+            Z 
+            
+            M 302 301 
+            a 12 12 0 1 0 0 24 
+            a 12 12 0 1 0 0 -24 
+            Z 
+            
+            M 358 319 
+            a 13 13 0 1 1 0 26 
+            a 13 13 0 1 1 0 -26 
+            Z
+          " 
+          fill="#FFFFFF" 
+          fill-rule="nonzero" 
+          filter="url(#shadow)" />
+</svg>
