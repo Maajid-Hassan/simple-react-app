@@ -7,11 +7,15 @@ import EmptyState from './EmptyState';
 export default function TaskList() {
   const { 
     tasks, setTasks,
-    filter, activeSpace, priorityFilter, searchQuery
+    filter, activeSpace, priorityFilter, searchQuery,
+    userSettings
   } = useTasks();
 
   // Filter tasks according to space, status filter, priorities, and search queries
   const filteredTasks = useMemo(() => tasks.filter(task => {
+    // 0. User preference auto-hide completed
+    if (userSettings?.hideCompleted && task.completed && filter === 'all') return false;
+
     // 1. Space filter
     if (activeSpace !== 'all' && task.category !== activeSpace) return false;
     
@@ -32,7 +36,7 @@ export default function TaskList() {
     }
     
     return true;
-  }), [tasks, activeSpace, filter, priorityFilter, searchQuery]);
+  }), [tasks, activeSpace, filter, priorityFilter, searchQuery, userSettings?.hideCompleted]);
 
   const handleReorder = (newOrder) => {
     // Update the main tasks database based on the new sorted order of the filtered subset
