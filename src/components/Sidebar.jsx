@@ -4,7 +4,7 @@ import {
   ListTodo, Kanban, Calendar, LayoutGrid, BarChart3,
   Folder, Plus, Trash2,
   ChevronLeft, ChevronRight, Hash, X, User, Settings,
-  ChevronDown
+  ChevronDown, Download
 } from 'lucide-react';
 import { useTasks } from '../context/TaskContext';
 
@@ -29,6 +29,7 @@ export default function Sidebar() {
     { id: 'calendar', label: 'Calendar Grid', icon: Calendar },
     { id: 'matrix', label: 'Priority Matrix', icon: LayoutGrid },
     { id: 'dashboard', label: 'Analytics Hub', icon: BarChart3 },
+    { id: 'export', label: 'Export & Reports', icon: Download },
     { id: 'profile', label: 'User Profile', icon: User },
     { id: 'settings', label: 'Settings', icon: Settings }
   ];
