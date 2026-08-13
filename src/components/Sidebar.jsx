@@ -54,8 +54,8 @@ export default function Sidebar() {
 
   const renderContent = (collapsed, isMobile) => {
     return (
-      <div className="flex flex-col h-full justify-between">
-        <div className="flex flex-col gap-6 overflow-hidden">
+      <div className="flex flex-col h-full justify-between w-full">
+        <div className="flex flex-col gap-6 w-full overflow-visible">
           {/* Workspace Brand Title */}
           <div className="flex items-center justify-between border-b border-bmuted pb-4">
             <div className="flex items-center gap-2">
@@ -85,7 +85,7 @@ export default function Sidebar() {
           </div>
 
           {/* View Switcher Navigation */}
-          <nav className="flex flex-col gap-1">
+          <nav className="flex w-full flex-col gap-1 overflow-visible">
             {views.map((v) => {
               const isActive = activeView === v.id;
               const Icon = v.icon;
@@ -96,8 +96,7 @@ export default function Sidebar() {
                     setActiveView(v.id);
                     if (isMobile) setIsMobileSidebarOpen(false);
                   }}
-                  className={`relative py-3 rounded-xl font-medium text-xs tracking-wide uppercase flex items-center gap-3.5 focus:outline-none cursor-pointer transition-all duration-200 ${(collapsed && !isMobile) ? 'justify-center px-0' : 'px-4'
-                    } ${isActive ? 'text-tmain font-black' : 'text-tmuted hover:text-tsub hover:translate-x-1 hover:bg-inbg/55'}`}
+                  className={`relative w-full py-3 rounded-xl font-medium text-xs tracking-wide uppercase flex items-center gap-3.5 focus:outline-none cursor-pointer transition-all duration-200 ${(collapsed && !isMobile) ? 'justify-center px-0' : 'px-4'} ${isActive ? 'text-tmain font-black' : 'text-tmuted hover:text-tsub hover:translate-x-1 hover:bg-inbg/55'}`}
                 >
                   {isActive && (
                     <motion.div
@@ -195,8 +194,7 @@ export default function Sidebar() {
                         setActiveSpace('all');
                         if (isMobile) setIsMobileSidebarOpen(false);
                       }}
-                      className={`relative py-2.5 rounded-xl font-medium text-xs flex items-center gap-3.5 cursor-pointer focus:outline-none transition-all duration-200 ${(collapsed && !isMobile) ? 'justify-center px-0' : 'px-4'
-                        } ${activeSpace === 'all' ? 'text-tmain font-black' : 'text-tmuted hover:text-tsub hover:translate-x-1 hover:bg-inbg/55'}`}
+                      className={`relative w-full py-2.5 rounded-xl font-medium text-xs flex items-center gap-3.5 cursor-pointer focus:outline-none transition-all duration-200 ${(collapsed && !isMobile) ? 'justify-center px-0' : 'px-4'} ${activeSpace === 'all' ? 'text-tmain font-black' : 'text-tmuted hover:text-tsub hover:translate-x-1 hover:bg-inbg/55'}`}
                     >
                       {activeSpace === 'all' && (
                         <motion.div
@@ -215,16 +213,14 @@ export default function Sidebar() {
                       return (
                         <div
                           key={s.id}
-                          className={`group flex items-center justify-between rounded-xl relative ${(collapsed && !isMobile) ? 'justify-center' : 'px-4'
-                            }`}
+                          className={`group flex items-center justify-between rounded-xl relative w-full ${(collapsed && !isMobile) ? 'justify-center' : 'px-4'}`}
                         >
                           <button
                             onClick={() => {
                               setActiveSpace(s.id);
                               if (isMobile) setIsMobileSidebarOpen(false);
                             }}
-                            className={`flex-1 py-2.5 font-medium text-xs flex items-center gap-3.5 cursor-pointer focus:outline-none transition-all duration-200 rounded-xl ${isActive ? 'text-tmain font-black' : 'text-tmuted hover:text-tsub hover:translate-x-1 hover:bg-inbg/55'
-                              }`}
+                            className={`flex-1 w-full py-2.5 font-medium text-xs flex items-center gap-3.5 cursor-pointer focus:outline-none transition-all duration-200 rounded-xl ${isActive ? 'text-tmain font-black' : 'text-tmuted hover:text-tsub hover:translate-x-1 hover:bg-inbg/55'}`}
                           >
                             {isActive && (
                               <motion.div

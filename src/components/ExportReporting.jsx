@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Download, Upload, FileJson, FileText, BarChart3, Calendar, Copy, Share2 } from 'lucide-react';
+import { Download, Upload, FileJson, FileText, BarChart3, Calendar, Copy, Share2, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { useTasks } from '../context/TaskContext';
 import {
@@ -11,7 +11,8 @@ import {
   importFromCSV,
   importFromPDF,
   shareTasksAsText,
-  generateSamplePDF
+  generateSamplePDF,
+  previewPDF
 } from '../utils/exportUtils';
 
 export default function ExportReporting() {
@@ -20,6 +21,7 @@ export default function ExportReporting() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedExport, setSelectedExport] = useState(null);
   const [importLoading, setImportLoading] = useState(false);
   const [shareText, setShareText] = useState(null);
 
@@ -53,9 +55,22 @@ export default function ExportReporting() {
   };
 
   // Handle PDF Export
-  const handlePDFExport = async () => {
+  const handlePDFExport = async (event) => {
+    event?.stopPropagation();
     await exportToPDF(tasks, `zenflow-tasks-${new Date().toISOString().split('T')[0]}.pdf`);
     addToast('Tasks exported as PDF', () => {});
+  };
+
+  const handlePDFPreview = async (event) => {
+    event?.stopPropagation();
+    setSelectedExport('pdf');
+    const fileName = `zenflow-tasks-${new Date().toISOString().split('T')[0]}.pdf`;
+    const previewWindow = await previewPDF(tasks, fileName);
+    if (previewWindow) {
+      addToast('PDF preview opened in a new tab', () => {});
+      return;
+    }
+    addToast('Unable to open PDF preview', () => {});
   };
 
   // Handle File Import
@@ -123,6 +138,13 @@ export default function ExportReporting() {
     setShareText(text);
   };
 
+  const getExportCardClassName = (exportType) => {
+    const baseClassName = 'group relative overflow-hidden rounded-xl bg-panel border p-5 text-left transition-all hover:border-accent/30 hover:shadow-lg';
+    return selectedExport === exportType
+      ? `${baseClassName} border-accent bg-accent/5 shadow-lg`
+      : `${baseClassName} border-bmuted`;
+  };
+
   // Copy to Clipboard
   const copyToClipboard = async (text) => {
     try {
@@ -176,10 +198,19 @@ export default function ExportReporting() {
           className="grid gap-4"
         >
           {/* CSV Export */}
-          <motion.button
+          <motion.div
             variants={cardVariants}
-            onClick={handleCSVExport}
-            className="group relative overflow-hidden rounded-xl bg-panel border border-bmuted p-5 text-left transition-all hover:border-accent/30 hover:shadow-lg"
+            role="button"
+            tabIndex={0}
+            aria-pressed={selectedExport === 'csv'}
+            onClick={() => setSelectedExport('csv')}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setSelectedExport('csv');
+              }
+            }}
+            className={getExportCardClassName('csv')}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             <div className="relative flex items-start gap-4">
@@ -193,15 +224,37 @@ export default function ExportReporting() {
                 </p>
                 <p className="text-tmuted text-xs mt-2">{tasks.length} tasks available</p>
               </div>
-              <Download size={20} className="text-accent opacity-0 transition-opacity group-hover:opacity-100 mt-1" />
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Download CSV"
+                  title="Download CSV"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleCSVExport();
+                  }}
+                  className="rounded-lg p-2 text-accent hover:bg-accent/10 transition-colors focus:outline-none focus:ring-2 focus:ring-accent/40"
+                >
+                  <Download size={18} />
+                </button>
+              </div>
             </div>
-          </motion.button>
+          </motion.div>
 
           {/* JSON Export */}
-          <motion.button
+          <motion.div
             variants={cardVariants}
-            onClick={handleJSONExport}
-            className="group relative overflow-hidden rounded-xl bg-panel border border-bmuted p-5 text-left transition-all hover:border-accent/30 hover:shadow-lg"
+            role="button"
+            tabIndex={0}
+            aria-pressed={selectedExport === 'json'}
+            onClick={() => setSelectedExport('json')}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setSelectedExport('json');
+              }
+            }}
+            className={getExportCardClassName('json')}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             <div className="relative flex items-start gap-4">
@@ -215,15 +268,37 @@ export default function ExportReporting() {
                 </p>
                 <p className="text-tmuted text-xs mt-2">Can be imported later to restore everything</p>
               </div>
-              <Download size={20} className="text-accent opacity-0 transition-opacity group-hover:opacity-100 mt-1" />
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Download JSON backup"
+                  title="Download JSON backup"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleJSONExport();
+                  }}
+                  className="rounded-lg p-2 text-accent hover:bg-accent/10 transition-colors focus:outline-none focus:ring-2 focus:ring-accent/40"
+                >
+                  <Download size={18} />
+                </button>
+              </div>
             </div>
-          </motion.button>
+          </motion.div>
 
           {/* PDF Export */}
-          <motion.button
+          <motion.div
             variants={cardVariants}
-            onClick={handlePDFExport}
-            className="group relative overflow-hidden rounded-xl bg-panel border border-bmuted p-5 text-left transition-all hover:border-accent/30 hover:shadow-lg"
+            role="button"
+            tabIndex={0}
+            aria-pressed={selectedExport === 'pdf'}
+            onClick={() => setSelectedExport('pdf')}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setSelectedExport('pdf');
+              }
+            }}
+            className={getExportCardClassName('pdf')}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             <div className="relative flex items-start gap-4">
@@ -237,9 +312,34 @@ export default function ExportReporting() {
                 </p>
                 <p className="text-tmuted text-xs mt-2">Perfect for printing or sharing</p>
               </div>
-              <Download size={20} className="text-accent opacity-0 transition-opacity group-hover:opacity-100 mt-1" />
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Preview PDF"
+                  title="Preview PDF"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handlePDFPreview(event);
+                  }}
+                  className="rounded-lg p-2 text-accent hover:bg-accent/10 transition-colors focus:outline-none focus:ring-2 focus:ring-accent/40"
+                >
+                  <Eye size={18} />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Download PDF"
+                  title="Download PDF"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handlePDFExport(event);
+                  }}
+                  className="rounded-lg p-2 text-accent hover:bg-accent/10 transition-colors focus:outline-none focus:ring-2 focus:ring-accent/40"
+                >
+                  <Download size={18} />
+                </button>
+              </div>
             </div>
-          </motion.button>
+          </motion.div>
 
           {/* Share as Text */}
           <motion.button

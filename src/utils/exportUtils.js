@@ -285,15 +285,14 @@ export const exportToJSON = (tasks, spaces, userProfile, filename = 'zenflow-bac
 };
 
 /**
- * Export tasks to PDF with formatting and optional date range
+ * Generate a PDF document as a Blob without triggering a browser download.
  */
-export const exportToPDF = async (
+export const generatePDFBlob = async (
   tasks,
   filename = 'zenflow-tasks-report.pdf',
   options = { dateFrom: null, dateTo: null, includeCompleted: true }
 ) => {
   try {
-    // Filter tasks by date range if provided
     let filteredTasks = tasks;
     if (options.dateFrom || options.dateTo) {
       filteredTasks = tasks.filter(task => {
@@ -303,7 +302,6 @@ export const exportToPDF = async (
       });
     }
 
-    // Filter out completed tasks if not included
     if (!options.includeCompleted) {
       filteredTasks = filteredTasks.filter(t => !t.completed);
     }
@@ -320,7 +318,6 @@ export const exportToPDF = async (
     const maxWidth = pageWidth - (margin * 2);
     let yPosition = margin;
 
-    // Helper function to add page if needed
     const checkPageBreak = (height = 10) => {
       if (yPosition + height > pageHeight - 10) {
         doc.addPage();
@@ -328,35 +325,32 @@ export const exportToPDF = async (
       }
     };
 
-    // Title
     doc.setFontSize(24);
     doc.setFont(undefined, 'bold');
-    doc.setTextColor(79, 70, 229); // Indigo
+    doc.setTextColor(79, 70, 229);
     doc.text('Zenflow Task Report', pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 12;
 
-    // Separator line
     doc.setDrawColor(79, 70, 229);
     doc.setLineWidth(0.5);
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
     yPosition += 8;
 
-    // Report metadata
     doc.setFontSize(11);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(60, 60, 60);
-    
-    const reportDate = new Date().toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+
+    const reportDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
     doc.text(`Report Generated: ${reportDate}`, margin, yPosition);
     yPosition += 6;
 
     const completed = filteredTasks.filter(t => t.completed).length;
     const pending = filteredTasks.length - completed;
-    const completionRate = filteredTasks.length > 0 
+    const completionRate = filteredTasks.length > 0
       ? ((completed / filteredTasks.length) * 100).toFixed(1)
       : 0;
 
@@ -365,22 +359,20 @@ export const exportToPDF = async (
     doc.text(`Completion Rate: ${completionRate}%`, margin, yPosition);
     yPosition += 10;
 
-    // Tasks section
     doc.setFontSize(13);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(40, 40, 40);
     doc.text('Task List', margin, yPosition);
     yPosition += 8;
 
-    // Table headers
     doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(79, 70, 229);
     doc.setFillColor(240, 240, 255);
-    
+
     const colX = [margin, margin + 8, margin + 35, margin + 100, pageWidth - margin - 25];
     const rowHeight = 7;
-    
+
     doc.rect(margin, yPosition - 4, maxWidth, rowHeight, 'F');
     doc.text('#', colX[0], yPosition);
     doc.text('Status', colX[1], yPosition);
@@ -389,12 +381,10 @@ export const exportToPDF = async (
     doc.text('Due Date', colX[4], yPosition);
     yPosition += 8;
 
-    // Separator
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.3);
     doc.line(margin, yPosition - 1, pageWidth - margin, yPosition - 1);
 
-    // Task rows
     doc.setFontSize(9);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(0, 0, 0);
@@ -402,25 +392,21 @@ export const exportToPDF = async (
     filteredTasks.forEach((task, idx) => {
       checkPageBreak(12);
 
-      // Alternate row background
       if (idx % 2 === 0) {
         doc.setFillColor(252, 252, 255);
         doc.rect(margin, yPosition - 4, maxWidth, rowHeight + 2, 'F');
       }
 
-      // Status
       const statusSymbol = task.completed ? '[✓]' : '[ ]';
-      const statusColor = task.completed ? [34, 197, 94] : [251, 191, 36]; // Green or Amber
+      const statusColor = task.completed ? [34, 197, 94] : [251, 191, 36];
       doc.setTextColor(...statusColor);
       doc.setFont(undefined, 'bold');
       doc.text(statusSymbol, colX[1], yPosition);
 
-      // Task number and text
       doc.setTextColor(0, 0, 0);
       doc.setFont(undefined, 'normal');
       doc.text(`${idx + 1}`, colX[0] + 1, yPosition);
 
-      // Wrap task text
       const taskLines = doc.splitTextToSize(task.text, colX[3] - colX[2] - 2);
       if (taskLines.length > 0) {
         doc.text(taskLines[0], colX[2], yPosition);
@@ -430,7 +416,6 @@ export const exportToPDF = async (
         }
       }
 
-      // Priority
       const priorityColor = {
         high: [220, 38, 38],
         medium: [251, 146, 60],
@@ -442,17 +427,15 @@ export const exportToPDF = async (
       const priorityText = task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : '-';
       doc.text(priorityText, colX[3], yPosition - (taskLines.length > 1 ? 5 * (taskLines.length - 1) : 0));
 
-      // Due date
       doc.setTextColor(100, 116, 139);
       doc.setFont(undefined, 'normal');
-      const dueDate = task.dueDate 
+      const dueDate = task.dueDate
         ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         : '-';
       doc.text(dueDate, colX[4], yPosition - (taskLines.length > 1 ? 5 * (taskLines.length - 1) : 0));
 
       yPosition += 8;
 
-      // Add description if present
       if (task.description && task.description.trim()) {
         checkPageBreak(5);
         doc.setFontSize(8);
@@ -474,7 +457,6 @@ export const exportToPDF = async (
     yPosition += 5;
     checkPageBreak(15);
 
-    // Summary section
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(40, 40, 40);
@@ -485,7 +467,6 @@ export const exportToPDF = async (
     doc.setFont(undefined, 'normal');
     doc.setTextColor(60, 60, 60);
 
-    // Priority breakdown
     const highPriority = filteredTasks.filter(t => t.priority === 'high').length;
     const mediumPriority = filteredTasks.filter(t => t.priority === 'medium').length;
     const lowPriority = filteredTasks.filter(t => t.priority === 'low').length;
@@ -497,7 +478,6 @@ export const exportToPDF = async (
     doc.text(`Low Priority Tasks: ${lowPriority}`, margin, yPosition);
     yPosition += 8;
 
-    // Category breakdown if applicable
     const categories = {};
     filteredTasks.forEach(task => {
       const cat = task.category || 'Uncategorized';
@@ -511,18 +491,54 @@ export const exportToPDF = async (
       });
     }
 
-    // Footer
     yPosition = pageHeight - 10;
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
     doc.setFont(undefined, 'normal');
     doc.text('Generated by Zenflow Task Manager', pageWidth / 2, yPosition, { align: 'center' });
 
-    doc.save(filename);
+    return doc.output('blob', { filename });
   } catch (error) {
     console.error('PDF export error:', error);
     alert('Error generating PDF. Please try again.');
+    return null;
   }
+};
+
+export const previewPDF = async (
+  tasks,
+  filename = 'zenflow-tasks-report.pdf',
+  options = { dateFrom: null, dateTo: null, includeCompleted: true }
+) => {
+  const blob = await generatePDFBlob(tasks, filename, options);
+  if (!blob || typeof window === 'undefined') return null;
+
+  const url = URL.createObjectURL(blob);
+  const previewWindow = window.open(url, '_blank', 'noopener,noreferrer');
+  if (previewWindow) {
+    previewWindow.opener = null;
+  }
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 60000);
+
+  return previewWindow;
+};
+
+/**
+ * Export tasks to PDF with formatting and optional date range
+ */
+export const exportToPDF = async (
+  tasks,
+  filename = 'zenflow-tasks-report.pdf',
+  options = { dateFrom: null, dateTo: null, includeCompleted: true }
+) => {
+  const blob = await generatePDFBlob(tasks, filename, options);
+  if (blob) {
+    downloadFile(blob, filename);
+  }
+  return blob;
 };
 
 /**
