@@ -510,20 +510,45 @@ export const previewPDF = async (
   filename = 'zenflow-tasks-report.pdf',
   options = { dateFrom: null, dateTo: null, includeCompleted: true }
 ) => {
-  const blob = await generatePDFBlob(tasks, filename, options);
-  if (!blob || typeof window === 'undefined') return null;
+  if (typeof window === 'undefined') return null;
 
-  const url = URL.createObjectURL(blob);
-  const previewWindow = window.open(url, '_blank', 'noopener,noreferrer');
-  if (previewWindow) {
-    previewWindow.opener = null;
+  let previewWindow = null;
+  try {
+    previewWindow = window.open('about:blank', '_blank');
+  } catch (e) {
+    console.warn('Popup window open failed:', e);
   }
 
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 60000);
+  try {
+    const blob = await generatePDFBlob(tasks, filename, options);
+    if (!blob) {
+      if (previewWindow && !previewWindow.closed) previewWindow.close();
+      return null;
+    }
 
-  return previewWindow;
+    const url = URL.createObjectURL(blob);
+
+    if (previewWindow && !previewWindow.closed) {
+      previewWindow.location.href = url;
+      try {
+        previewWindow.opener = null;
+      } catch (_) {}
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 60000);
+      return previewWindow;
+    } else {
+      const directWin = window.open(url, '_blank');
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 60000);
+      return directWin || true;
+    }
+  } catch (error) {
+    console.error('PDF preview generation error:', error);
+    if (previewWindow && !previewWindow.closed) previewWindow.close();
+    return null;
+  }
 };
 
 /**

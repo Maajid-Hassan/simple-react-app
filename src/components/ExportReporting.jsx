@@ -138,11 +138,8 @@ export default function ExportReporting() {
     setShareText(text);
   };
 
-  const getExportCardClassName = (exportType) => {
-    const baseClassName = 'group relative overflow-hidden rounded-xl bg-panel border p-5 text-left transition-all hover:border-accent/30 hover:shadow-lg';
-    return selectedExport === exportType
-      ? `${baseClassName} border-accent bg-accent/5 shadow-lg`
-      : `${baseClassName} border-bmuted`;
+  const getExportCardClassName = () => {
+    return 'group relative overflow-hidden rounded-xl bg-panel border border-bmuted p-5 text-left transition-all duration-200 cursor-pointer hover:border-accent hover:bg-accent/15 hover:shadow-xl hover:shadow-accent/10 focus:outline-none';
   };
 
   // Copy to Clipboard
@@ -164,7 +161,7 @@ export default function ExportReporting() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-bmuted">
+      <div className="flex gap-2 border-b border-bmuted pb-1">
         {[
           { id: 'export', label: 'Export', icon: Download },
           { id: 'import', label: 'Import', icon: Upload },
@@ -176,14 +173,21 @@ export default function ExportReporting() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 font-medium text-sm transition-colors ${
+              className={`relative flex items-center gap-2 px-5 py-3 font-semibold text-sm rounded-lg transition-all cursor-pointer ${
                 isActive
-                  ? 'text-accent border-b-2 border-accent'
-                  : 'text-tmuted hover:text-tmain'
+                  ? 'text-accent bg-accent/15 shadow-sm'
+                  : 'text-tmuted hover:text-tmain hover:bg-accent/10'
               }`}
             >
-              <Icon size={18} />
+              <Icon size={18} className={isActive ? 'text-accent' : 'text-tmuted group-hover:text-tmain'} />
               {tab.label}
+              {isActive && (
+                <motion.div
+                  layoutId="activeExportTab"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-full"
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                />
+              )}
             </button>
           );
         })}
@@ -200,6 +204,8 @@ export default function ExportReporting() {
           {/* CSV Export */}
           <motion.div
             variants={cardVariants}
+            whileHover={{ y: -2, scale: 1.008 }}
+            whileTap={{ scale: 0.995 }}
             role="button"
             tabIndex={0}
             aria-pressed={selectedExport === 'csv'}
@@ -212,9 +218,9 @@ export default function ExportReporting() {
             }}
             className={getExportCardClassName('csv')}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/25 via-accent/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
             <div className="relative flex items-start gap-4">
-              <div className="rounded-lg bg-accent/10 p-3">
+              <div className="rounded-lg bg-accent/15 p-3 group-hover:bg-accent/25 group-hover:scale-105 transition-all">
                 <FileText className="text-accent" size={24} />
               </div>
               <div className="flex-1">
@@ -233,7 +239,7 @@ export default function ExportReporting() {
                     event.stopPropagation();
                     handleCSVExport();
                   }}
-                  className="rounded-lg p-2 text-accent hover:bg-accent/10 transition-colors focus:outline-none focus:ring-2 focus:ring-accent/40"
+                  className="rounded-lg p-2.5 text-accent bg-accent/10 hover:bg-accent hover:text-white transition-all transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-accent/40 cursor-pointer shadow-sm"
                 >
                   <Download size={18} />
                 </button>
@@ -244,6 +250,8 @@ export default function ExportReporting() {
           {/* JSON Export */}
           <motion.div
             variants={cardVariants}
+            whileHover={{ y: -2, scale: 1.008 }}
+            whileTap={{ scale: 0.995 }}
             role="button"
             tabIndex={0}
             aria-pressed={selectedExport === 'json'}
@@ -256,9 +264,9 @@ export default function ExportReporting() {
             }}
             className={getExportCardClassName('json')}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/25 via-accent/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
             <div className="relative flex items-start gap-4">
-              <div className="rounded-lg bg-accent/10 p-3">
+              <div className="rounded-lg bg-accent/15 p-3 group-hover:bg-accent/25 group-hover:scale-105 transition-all">
                 <FileJson className="text-accent" size={24} />
               </div>
               <div className="flex-1">
@@ -277,7 +285,7 @@ export default function ExportReporting() {
                     event.stopPropagation();
                     handleJSONExport();
                   }}
-                  className="rounded-lg p-2 text-accent hover:bg-accent/10 transition-colors focus:outline-none focus:ring-2 focus:ring-accent/40"
+                  className="rounded-lg p-2.5 text-accent bg-accent/10 hover:bg-accent hover:text-white transition-all transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-accent/40 cursor-pointer shadow-sm"
                 >
                   <Download size={18} />
                 </button>
@@ -288,6 +296,8 @@ export default function ExportReporting() {
           {/* PDF Export */}
           <motion.div
             variants={cardVariants}
+            whileHover={{ y: -2, scale: 1.008 }}
+            whileTap={{ scale: 0.995 }}
             role="button"
             tabIndex={0}
             aria-pressed={selectedExport === 'pdf'}
@@ -300,9 +310,9 @@ export default function ExportReporting() {
             }}
             className={getExportCardClassName('pdf')}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/25 via-accent/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
             <div className="relative flex items-start gap-4">
-              <div className="rounded-lg bg-accent/10 p-3">
+              <div className="rounded-lg bg-accent/15 p-3 group-hover:bg-accent/25 group-hover:scale-105 transition-all">
                 <BarChart3 className="text-accent" size={24} />
               </div>
               <div className="flex-1">
@@ -321,7 +331,7 @@ export default function ExportReporting() {
                     event.stopPropagation();
                     handlePDFPreview(event);
                   }}
-                  className="rounded-lg p-2 text-accent hover:bg-accent/10 transition-colors focus:outline-none focus:ring-2 focus:ring-accent/40"
+                  className="rounded-lg p-2.5 text-accent bg-accent/10 hover:bg-accent hover:text-white transition-all transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-accent/40 cursor-pointer shadow-sm"
                 >
                   <Eye size={18} />
                 </button>
@@ -333,7 +343,7 @@ export default function ExportReporting() {
                     event.stopPropagation();
                     handlePDFExport(event);
                   }}
-                  className="rounded-lg p-2 text-accent hover:bg-accent/10 transition-colors focus:outline-none focus:ring-2 focus:ring-accent/40"
+                  className="rounded-lg p-2.5 text-accent bg-accent/10 hover:bg-accent hover:text-white transition-all transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-accent/40 cursor-pointer shadow-sm"
                 >
                   <Download size={18} />
                 </button>
@@ -344,12 +354,14 @@ export default function ExportReporting() {
           {/* Share as Text */}
           <motion.button
             variants={cardVariants}
+            whileHover={{ y: -2, scale: 1.008 }}
+            whileTap={{ scale: 0.995 }}
             onClick={handleShareAsText}
-            className="group relative overflow-hidden rounded-xl bg-panel border border-bmuted p-5 text-left transition-all hover:border-accent/30 hover:shadow-lg"
+            className="group relative overflow-hidden rounded-xl bg-panel border border-bmuted p-5 text-left transition-all duration-200 hover:border-accent/80 hover:bg-accent/15 hover:shadow-xl hover:shadow-accent/10 cursor-pointer"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/25 via-accent/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
             <div className="relative flex items-start gap-4">
-              <div className="rounded-lg bg-accent/10 p-3">
+              <div className="rounded-lg bg-accent/15 p-3 group-hover:bg-accent/25 group-hover:scale-105 transition-all">
                 <Share2 className="text-accent" size={24} />
               </div>
               <div className="flex-1">
@@ -359,7 +371,7 @@ export default function ExportReporting() {
                 </p>
                 <p className="text-tmuted text-xs mt-2">Ready to paste anywhere</p>
               </div>
-              <Share2 size={20} className="text-accent opacity-0 transition-opacity group-hover:opacity-100 mt-1" />
+              <Share2 size={20} className="text-accent opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all mt-1" />
             </div>
           </motion.button>
 
@@ -373,13 +385,13 @@ export default function ExportReporting() {
                 <h4 className="font-semibold text-tmain text-sm">Shared Text</h4>
                 <button
                   onClick={() => copyToClipboard(shareText)}
-                  className="flex items-center gap-2 px-3 py-1 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 text-xs font-medium transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/15 text-accent hover:bg-accent hover:text-white text-xs font-semibold transition-all cursor-pointer"
                 >
                   <Copy size={14} />
                   Copy
                 </button>
               </div>
-              <pre className="text-xs text-tmuted bg-pbg rounded-lg p-3 overflow-auto max-h-64 font-mono">
+              <pre className="text-xs text-tmuted bg-pbg rounded-lg p-3 overflow-auto max-h-64 font-mono border border-bmuted">
                 {shareText}
               </pre>
             </motion.div>
@@ -398,7 +410,9 @@ export default function ExportReporting() {
           {/* CSV Import */}
           <motion.label
             variants={cardVariants}
-            className="group relative overflow-hidden rounded-xl bg-panel border border-dashed border-bmuted p-5 text-left cursor-pointer transition-all hover:border-accent/50 hover:bg-accent/5"
+            whileHover={{ y: -2, scale: 1.008 }}
+            whileTap={{ scale: 0.995 }}
+            className="group relative overflow-hidden rounded-xl bg-panel border border-dashed border-bmuted p-5 text-left cursor-pointer transition-all duration-200 hover:border-accent hover:bg-accent/15 hover:shadow-xl hover:shadow-accent/10"
           >
             <input
               type="file"
@@ -407,22 +421,25 @@ export default function ExportReporting() {
               disabled={importLoading}
               className="hidden"
             />
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/25 via-accent/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
             <div className="relative flex items-start gap-4">
-              <div className="rounded-lg bg-accent/10 p-3">
+              <div className="rounded-lg bg-accent/15 p-3 group-hover:bg-accent/25 group-hover:scale-105 transition-all">
                 <FileText className="text-accent" size={24} />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-tmain">Import CSV</h3>
                 <p className="text-tmuted text-sm mt-1">Click to select a CSV file with task data</p>
               </div>
-              <Upload size={20} className="text-accent opacity-0 transition-opacity group-hover:opacity-100 mt-1" />
+              <Upload size={20} className="text-accent opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all mt-1" />
             </div>
           </motion.label>
 
           {/* JSON Import */}
           <motion.label
             variants={cardVariants}
-            className="group relative overflow-hidden rounded-xl bg-panel border border-dashed border-bmuted p-5 text-left cursor-pointer transition-all hover:border-accent/50 hover:bg-accent/5"
+            whileHover={{ y: -2, scale: 1.008 }}
+            whileTap={{ scale: 0.995 }}
+            className="group relative overflow-hidden rounded-xl bg-panel border border-dashed border-bmuted p-5 text-left cursor-pointer transition-all duration-200 hover:border-accent hover:bg-accent/15 hover:shadow-xl hover:shadow-accent/10"
           >
             <input
               type="file"
@@ -431,22 +448,25 @@ export default function ExportReporting() {
               disabled={importLoading}
               className="hidden"
             />
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/25 via-accent/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
             <div className="relative flex items-start gap-4">
-              <div className="rounded-lg bg-accent/10 p-3">
+              <div className="rounded-lg bg-accent/15 p-3 group-hover:bg-accent/25 group-hover:scale-105 transition-all">
                 <FileJson className="text-accent" size={24} />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-tmain">Import Backup (JSON)</h3>
                 <p className="text-tmuted text-sm mt-1">Restore complete backup with all task data</p>
               </div>
-              <Upload size={20} className="text-accent opacity-0 transition-opacity group-hover:opacity-100 mt-1" />
+              <Upload size={20} className="text-accent opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all mt-1" />
             </div>
           </motion.label>
 
           {/* PDF Import */}
           <motion.label
             variants={cardVariants}
-            className="group relative overflow-hidden rounded-xl bg-panel border border-dashed border-bmuted p-5 text-left cursor-pointer transition-all hover:border-accent/50 hover:bg-accent/5"
+            whileHover={{ y: -2, scale: 1.008 }}
+            whileTap={{ scale: 0.995 }}
+            className="group relative overflow-hidden rounded-xl bg-panel border border-dashed border-bmuted p-5 text-left cursor-pointer transition-all duration-200 hover:border-accent hover:bg-accent/15 hover:shadow-xl hover:shadow-accent/10"
           >
             <input
               type="file"
@@ -455,34 +475,37 @@ export default function ExportReporting() {
               disabled={importLoading}
               className="hidden"
             />
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/25 via-accent/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
             <div className="relative flex items-start gap-4">
-              <div className="rounded-lg bg-accent/10 p-3">
+              <div className="rounded-lg bg-accent/15 p-3 group-hover:bg-accent/25 group-hover:scale-105 transition-all">
                 <FileText className="text-accent" size={24} />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-tmain">Import from PDF</h3>
                 <p className="text-tmuted text-sm mt-1">Extract tasks from PDF documents automatically</p>
               </div>
-              <Upload size={20} className="text-accent opacity-0 transition-opacity group-hover:opacity-100 mt-1" />
+              <Upload size={20} className="text-accent opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all mt-1" />
             </div>
           </motion.label>
 
           {/* Download Sample PDF */}
           <motion.button
             variants={cardVariants}
+            whileHover={{ y: -2, scale: 1.008 }}
+            whileTap={{ scale: 0.995 }}
             onClick={generateSamplePDF}
-            className="group relative overflow-hidden rounded-xl bg-panel border border-bmuted p-5 text-left transition-all hover:border-accent/30 hover:shadow-lg"
+            className="group relative overflow-hidden rounded-xl bg-panel border border-bmuted p-5 text-left transition-all duration-200 hover:border-accent hover:bg-accent/15 hover:shadow-xl hover:shadow-accent/10 cursor-pointer"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/25 via-accent/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
             <div className="relative flex items-start gap-4">
-              <div className="rounded-lg bg-accent/10 p-3">
+              <div className="rounded-lg bg-accent/15 p-3 group-hover:bg-accent/25 group-hover:scale-105 transition-all">
                 <Download className="text-accent" size={24} />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-tmain">📥 Download Sample PDF</h3>
                 <p className="text-tmuted text-sm mt-1">Get a template to see how tasks should be formatted</p>
               </div>
-              <Download size={20} className="text-accent opacity-0 transition-opacity group-hover:opacity-100 mt-1" />
+              <Download size={20} className="text-accent opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all mt-1" />
             </div>
           </motion.button>
 
@@ -522,7 +545,7 @@ export default function ExportReporting() {
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-pbg border border-bmuted text-tmain placeholder-tmuted focus:outline-none focus:border-accent"
+                    className="w-full px-3 py-2.5 rounded-lg bg-pbg border border-bmuted text-tmain placeholder-tmuted focus:outline-none focus:border-accent hover:border-accent/60 transition-all cursor-pointer"
                   />
                 </div>
                 <div>
@@ -531,13 +554,13 @@ export default function ExportReporting() {
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-pbg border border-bmuted text-tmain placeholder-tmuted focus:outline-none focus:border-accent"
+                    className="w-full px-3 py-2.5 rounded-lg bg-pbg border border-bmuted text-tmain placeholder-tmuted focus:outline-none focus:border-accent hover:border-accent/60 transition-all cursor-pointer"
                   />
                 </div>
               </div>
               <button
                 onClick={handleGenerateReport}
-                className="w-full px-4 py-2 rounded-lg bg-accent text-white font-medium transition-colors hover:bg-accent-hover"
+                className="w-full px-4 py-2.5 rounded-lg bg-accent text-white font-semibold transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/25 active:scale-[0.99] cursor-pointer"
               >
                 Generate Report
               </button>
@@ -652,7 +675,7 @@ export default function ExportReporting() {
                   );
                   addToast('Report exported as PDF', () => {});
                 }}
-                className="w-full px-4 py-2 rounded-lg bg-accent/10 text-accent font-medium transition-colors hover:bg-accent/20"
+                className="w-full px-4 py-2.5 rounded-lg bg-accent/15 text-accent font-semibold transition-all hover:bg-accent hover:text-white hover:shadow-lg hover:shadow-accent/25 active:scale-[0.99] cursor-pointer"
               >
                 📥 Export Report as PDF
               </button>
