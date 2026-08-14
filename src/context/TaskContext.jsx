@@ -340,6 +340,7 @@ export function TaskProvider({ children }) {
     handleUndo,
     pauseToastTimer,
     resumeToastTimer,
+    addToast: showUndoToast,
     // Keyboard reordering
     handleShiftTaskOrder,
     // Screen reader announcements

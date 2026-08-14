@@ -1,0 +1,992 @@
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
+/**
+ * Generate a sample PDF for testing import functionality
+ */
+export const generateSamplePDF = () => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 15;
+  const maxWidth = pageWidth - (margin * 2);
+  let yPosition = margin;
+
+  // Title
+  doc.setFontSize(20);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(79, 70, 229);
+  doc.text('Sample Tasks for Import', pageWidth / 2, yPosition, { align: 'center' });
+  yPosition += 12;
+
+  // Separator line
+  doc.setDrawColor(79, 70, 229);
+  doc.setLineWidth(0.5);
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 8;
+
+  // Instructions
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(100, 116, 139);
+  const instructions = doc.splitTextToSize(
+    'This is a sample PDF with tasks that can be imported into Zenflow. Each task can include priority level, category, and due date information.',
+    maxWidth
+  );
+  instructions.forEach(line => {
+    doc.text(line, margin, yPosition);
+    yPosition += 5;
+  });
+  yPosition += 5;
+
+  // Sample tasks
+  const sampleTasks = [
+    {
+      num: 1,
+      status: '✓',
+      title: 'Complete project documentation',
+      priority: 'HIGH',
+      category: 'work',
+      dueDate: '08/20/2026',
+      description: 'Write comprehensive documentation for the new feature'
+    },
+    {
+      num: 2,
+      status: ' ',
+      title: 'Review code changes from team members',
+      priority: 'HIGH',
+      category: 'work',
+      dueDate: '08/15/2026',
+      description: 'Review and approve pull requests'
+    },
+    {
+      num: 3,
+      status: ' ',
+      title: 'Prepare presentation for stakeholders',
+      priority: 'MEDIUM',
+      category: 'work',
+      dueDate: '08/18/2026',
+      description: 'Create slides and talking points'
+    },
+    {
+      num: 4,
+      status: ' ',
+      title: 'Schedule team meeting',
+      priority: 'MEDIUM',
+      category: 'work',
+      dueDate: '08/16/2026',
+      description: 'Set up quarterly planning session'
+    },
+    {
+      num: 5,
+      status: '✓',
+      title: 'Morning workout and stretching',
+      priority: 'LOW',
+      category: 'personal',
+      dueDate: '08/13/2026',
+      description: 'Daily health and fitness routine'
+    },
+    {
+      num: 6,
+      status: ' ',
+      title: 'Plan weekend trip',
+      priority: 'LOW',
+      category: 'personal',
+      dueDate: '08/17/2026',
+      description: 'Research destinations and book accommodation'
+    },
+    {
+      num: 7,
+      status: ' ',
+      title: 'Brainstorm new feature ideas',
+      priority: 'MEDIUM',
+      category: 'ideas',
+      dueDate: '08/22/2026',
+      description: 'Collect and evaluate innovative concepts'
+    },
+    {
+      num: 8,
+      status: ' ',
+      title: 'Design mobile app wireframes',
+      priority: 'HIGH',
+      category: 'ideas',
+      dueDate: '08/19/2026',
+      description: 'Create user interface mockups'
+    }
+  ];
+
+  doc.setFontSize(11);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(40, 40, 40);
+  doc.text('Tasks:', margin, yPosition);
+  yPosition += 7;
+
+  // Sample tasks with formatting
+  sampleTasks.forEach(task => {
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    
+    const statusColor = task.status === '✓' ? [34, 197, 94] : [251, 191, 36];
+    doc.setTextColor(...statusColor);
+    doc.text(`${task.num}. [${task.status}]`, margin, yPosition);
+    
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'normal');
+    const titleLines = doc.splitTextToSize(task.title, maxWidth - 30);
+    titleLines.forEach((line, idx) => {
+      if (idx === 0) {
+        doc.text(line, margin + 28, yPosition);
+      } else {
+        yPosition += 5;
+        doc.text(line, margin + 28, yPosition);
+      }
+    });
+    yPosition += 5;
+
+    const priorityColor = {
+      'HIGH': [220, 38, 38],
+      'MEDIUM': [251, 146, 60],
+      'LOW': [34, 197, 94]
+    }[task.priority];
+    doc.setTextColor(...priorityColor);
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(9);
+    doc.text(`Priority: ${task.priority}`, margin + 5, yPosition);
+    
+    doc.setTextColor(100, 116, 139);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Category: ${task.category}`, margin + 50, yPosition);
+    yPosition += 5;
+
+    doc.text(`Due: ${task.dueDate}`, margin + 5, yPosition);
+    yPosition += 5;
+
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.setFont(undefined, 'italic');
+    const descLines = doc.splitTextToSize(task.description, maxWidth - 10);
+    doc.text(descLines[0], margin + 5, yPosition);
+    yPosition += 4;
+
+    yPosition += 3;
+  });
+
+  yPosition = doc.internal.pageSize.getHeight() - 10;
+  doc.setFontSize(8);
+  doc.setTextColor(150, 150, 150);
+  doc.setFont(undefined, 'normal');
+  doc.text('Sample PDF - Generated by Zenflow Task Manager', pageWidth / 2, yPosition, { align: 'center' });
+
+  doc.save('zenflow-sample-tasks.pdf');
+};
+
+/**
+ * Helper function to escape CSV fields
+ */
+const escapeCSVField = (field) => {
+  if (field === null || field === undefined) return '';
+  
+  const stringField = String(field).replace(/\n/g, ' ');
+  
+  // Check if field needs quoting
+  if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+    return `"${stringField.replace(/"/g, '""')}"`;
+  }
+  
+  return stringField;
+};
+
+/**
+ * Export tasks to CSV format
+ */
+export const exportToCSV = (tasks, filename = 'zenflow-tasks.csv') => {
+  if (!tasks || tasks.length === 0) {
+    alert('No tasks to export');
+    return;
+  }
+
+  // Define CSV headers
+  const headers = ['ID', 'Task Title', 'Status', 'Priority', 'Category', 'Due Date', 'Assignee', 'Description', 'Subtasks Count', 'Comments Count', 'Created Date'];
+
+  // Convert tasks to CSV rows
+  const rows = tasks.map(task => {
+    const status = task.completed ? 'Completed' : 'Pending';
+    const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '';
+    const createdDate = new Date(task.createdAt).toLocaleDateString();
+    const priority = task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Medium';
+    const category = task.category ? task.category.charAt(0).toUpperCase() + task.category.slice(1) : 'General';
+    
+    return [
+      escapeCSVField(task.id),
+      escapeCSVField(task.text),
+      escapeCSVField(status),
+      escapeCSVField(priority),
+      escapeCSVField(category),
+      escapeCSVField(dueDate),
+      escapeCSVField(task.assignee),
+      escapeCSVField(task.description),
+      escapeCSVField(task.subtasks?.length || 0),
+      escapeCSVField(task.comments?.length || 0),
+      escapeCSVField(createdDate)
+    ];
+  });
+
+  // Combine headers and rows with proper formatting
+  const csvLines = [
+    headers.map(escapeCSVField).join(','),
+    ...rows.map(row => row.join(','))
+  ];
+
+  const csvContent = csvLines.join('\r\n'); // Use CRLF for better Excel compatibility
+
+  // Create blob and download
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Excel UTF-8 support
+  downloadFile(blob, filename);
+};
+
+/**
+ * Export tasks to JSON format (full backup)
+ */
+export const exportToJSON = (tasks, spaces, userProfile, filename = 'zenflow-backup.json') => {
+  if (!tasks || tasks.length === 0) {
+    alert('No tasks to export');
+    return;
+  }
+
+  const backup = {
+    exportDate: new Date().toISOString(),
+    version: '1.0',
+    appName: 'Zenflow Task Manager',
+    summary: {
+      totalTasks: tasks.length,
+      completedTasks: tasks.filter(t => t.completed).length,
+      pendingTasks: tasks.filter(t => !t.completed).length,
+      spaces: spaces?.length || 0,
+      exportedBy: userProfile?.name || 'Unknown User'
+    },
+    data: {
+      tasks: tasks.map(task => ({
+        ...task,
+        createdAt: new Date(task.createdAt).toISOString(),
+        dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null
+      })),
+      spaces: spaces || [],
+      userProfile: userProfile || {}
+    }
+  };
+
+  const jsonContent = JSON.stringify(backup, null, 2);
+  const blob = new Blob([jsonContent], { type: 'application/json' });
+  downloadFile(blob, filename);
+};
+
+/**
+ * Generate a PDF document as a Blob without triggering a browser download.
+ */
+export const generatePDFBlob = async (
+  tasks,
+  filename = 'zenflow-tasks-report.pdf',
+  options = { dateFrom: null, dateTo: null, includeCompleted: true }
+) => {
+  try {
+    let filteredTasks = tasks;
+    if (options.dateFrom || options.dateTo) {
+      filteredTasks = tasks.filter(task => {
+        if (options.dateFrom && new Date(task.createdAt) < new Date(options.dateFrom)) return false;
+        if (options.dateTo && new Date(task.createdAt) > new Date(options.dateTo)) return false;
+        return true;
+      });
+    }
+
+    if (!options.includeCompleted) {
+      filteredTasks = filteredTasks.filter(t => !t.completed);
+    }
+
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const maxWidth = pageWidth - (margin * 2);
+    let yPosition = margin;
+
+    const checkPageBreak = (height = 10) => {
+      if (yPosition + height > pageHeight - 10) {
+        doc.addPage();
+        yPosition = margin;
+      }
+    };
+
+    doc.setFontSize(24);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(79, 70, 229);
+    doc.text('Zenflow Task Report', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 12;
+
+    doc.setDrawColor(79, 70, 229);
+    doc.setLineWidth(0.5);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 8;
+
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(60, 60, 60);
+
+    const reportDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    doc.text(`Report Generated: ${reportDate}`, margin, yPosition);
+    yPosition += 6;
+
+    const completed = filteredTasks.filter(t => t.completed).length;
+    const pending = filteredTasks.length - completed;
+    const completionRate = filteredTasks.length > 0
+      ? ((completed / filteredTasks.length) * 100).toFixed(1)
+      : 0;
+
+    doc.text(`Total Tasks: ${filteredTasks.length} | Completed: ${completed} | Pending: ${pending}`, margin, yPosition);
+    yPosition += 6;
+    doc.text(`Completion Rate: ${completionRate}%`, margin, yPosition);
+    yPosition += 10;
+
+    doc.setFontSize(13);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(40, 40, 40);
+    doc.text('Task List', margin, yPosition);
+    yPosition += 8;
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(79, 70, 229);
+    doc.setFillColor(240, 240, 255);
+
+    const colX = [margin, margin + 8, margin + 35, margin + 100, pageWidth - margin - 25];
+    const rowHeight = 7;
+
+    doc.rect(margin, yPosition - 4, maxWidth, rowHeight, 'F');
+    doc.text('#', colX[0], yPosition);
+    doc.text('Status', colX[1], yPosition);
+    doc.text('Task', colX[2], yPosition);
+    doc.text('Priority', colX[3], yPosition);
+    doc.text('Due Date', colX[4], yPosition);
+    yPosition += 8;
+
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(margin, yPosition - 1, pageWidth - margin, yPosition - 1);
+
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(0, 0, 0);
+
+    filteredTasks.forEach((task, idx) => {
+      checkPageBreak(12);
+
+      if (idx % 2 === 0) {
+        doc.setFillColor(252, 252, 255);
+        doc.rect(margin, yPosition - 4, maxWidth, rowHeight + 2, 'F');
+      }
+
+      const statusSymbol = task.completed ? '[✓]' : '[ ]';
+      const statusColor = task.completed ? [34, 197, 94] : [251, 191, 36];
+      doc.setTextColor(...statusColor);
+      doc.setFont(undefined, 'bold');
+      doc.text(statusSymbol, colX[1], yPosition);
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFont(undefined, 'normal');
+      doc.text(`${idx + 1}`, colX[0] + 1, yPosition);
+
+      const taskLines = doc.splitTextToSize(task.text, colX[3] - colX[2] - 2);
+      if (taskLines.length > 0) {
+        doc.text(taskLines[0], colX[2], yPosition);
+        for (let i = 1; i < taskLines.length; i++) {
+          yPosition += 5;
+          doc.text(taskLines[i], colX[2], yPosition);
+        }
+      }
+
+      const priorityColor = {
+        high: [220, 38, 38],
+        medium: [251, 146, 60],
+        low: [34, 197, 94]
+      };
+      const pColor = priorityColor[task.priority] || [100, 116, 139];
+      doc.setTextColor(...pColor);
+      doc.setFont(undefined, 'bold');
+      const priorityText = task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : '-';
+      doc.text(priorityText, colX[3], yPosition - (taskLines.length > 1 ? 5 * (taskLines.length - 1) : 0));
+
+      doc.setTextColor(100, 116, 139);
+      doc.setFont(undefined, 'normal');
+      const dueDate = task.dueDate
+        ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : '-';
+      doc.text(dueDate, colX[4], yPosition - (taskLines.length > 1 ? 5 * (taskLines.length - 1) : 0));
+
+      yPosition += 8;
+
+      if (task.description && task.description.trim()) {
+        checkPageBreak(5);
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.setFont(undefined, 'italic');
+        const descLines = doc.splitTextToSize(`Note: ${task.description}`, maxWidth - 10);
+        descLines.slice(0, 2).forEach(line => {
+          doc.text(line, margin + 5, yPosition);
+          yPosition += 4;
+        });
+        if (descLines.length > 2) {
+          doc.text('...', margin + 5, yPosition);
+          yPosition += 4;
+        }
+        yPosition += 2;
+      }
+    });
+
+    yPosition += 5;
+    checkPageBreak(15);
+
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(40, 40, 40);
+    doc.text('Summary', margin, yPosition);
+    yPosition += 7;
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(60, 60, 60);
+
+    const highPriority = filteredTasks.filter(t => t.priority === 'high').length;
+    const mediumPriority = filteredTasks.filter(t => t.priority === 'medium').length;
+    const lowPriority = filteredTasks.filter(t => t.priority === 'low').length;
+
+    doc.text(`High Priority Tasks: ${highPriority}`, margin, yPosition);
+    yPosition += 5;
+    doc.text(`Medium Priority Tasks: ${mediumPriority}`, margin, yPosition);
+    yPosition += 5;
+    doc.text(`Low Priority Tasks: ${lowPriority}`, margin, yPosition);
+    yPosition += 8;
+
+    const categories = {};
+    filteredTasks.forEach(task => {
+      const cat = task.category || 'Uncategorized';
+      categories[cat] = (categories[cat] || 0) + 1;
+    });
+
+    if (Object.keys(categories).length > 1) {
+      Object.entries(categories).forEach(([cat, count]) => {
+        doc.text(`${cat}: ${count} task${count !== 1 ? 's' : ''}`, margin, yPosition);
+        yPosition += 5;
+      });
+    }
+
+    yPosition = pageHeight - 10;
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.setFont(undefined, 'normal');
+    doc.text('Generated by Zenflow Task Manager', pageWidth / 2, yPosition, { align: 'center' });
+
+    return doc.output('blob', { filename });
+  } catch (error) {
+    console.error('PDF export error:', error);
+    alert('Error generating PDF. Please try again.');
+    return null;
+  }
+};
+
+export const previewPDF = async (
+  tasks,
+  filename = 'zenflow-tasks-report.pdf',
+  options = { dateFrom: null, dateTo: null, includeCompleted: true }
+) => {
+  if (typeof window === 'undefined') return null;
+
+  let previewWindow = null;
+  try {
+    previewWindow = window.open('about:blank', '_blank');
+  } catch (e) {
+    console.warn('Popup window open failed:', e);
+  }
+
+  try {
+    const blob = await generatePDFBlob(tasks, filename, options);
+    if (!blob) {
+      if (previewWindow && !previewWindow.closed) previewWindow.close();
+      return null;
+    }
+
+    const url = URL.createObjectURL(blob);
+
+    if (previewWindow && !previewWindow.closed) {
+      previewWindow.location.href = url;
+      try {
+        previewWindow.opener = null;
+      } catch (_) {}
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 60000);
+      return previewWindow;
+    } else {
+      const directWin = window.open(url, '_blank');
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 60000);
+      return directWin || true;
+    }
+  } catch (error) {
+    console.error('PDF preview generation error:', error);
+    if (previewWindow && !previewWindow.closed) previewWindow.close();
+    return null;
+  }
+};
+
+/**
+ * Export tasks to PDF with formatting and optional date range
+ */
+export const exportToPDF = async (
+  tasks,
+  filename = 'zenflow-tasks-report.pdf',
+  options = { dateFrom: null, dateTo: null, includeCompleted: true }
+) => {
+  const blob = await generatePDFBlob(tasks, filename, options);
+  if (blob) {
+    downloadFile(blob, filename);
+  }
+  return blob;
+};
+
+/**
+ * Generate a detailed report by date range
+ */
+export const generateDateRangeReport = (tasks, dateFrom, dateTo) => {
+  const filtered = tasks.filter(task => {
+    const taskDate = new Date(task.createdAt);
+    return taskDate >= new Date(dateFrom) && taskDate <= new Date(dateTo);
+  });
+
+  const completed = filtered.filter(t => t.completed).length;
+  const pending = filtered.filter(t => !t.completed).length;
+
+  const report = {
+    period: { 
+      from: new Date(dateFrom).toLocaleDateString(),
+      to: new Date(dateTo).toLocaleDateString(),
+      daysIncluded: Math.ceil((new Date(dateTo) - new Date(dateFrom)) / (1000 * 60 * 60 * 24)) + 1
+    },
+    totalTasks: filtered.length,
+    completed,
+    pending,
+    completionRate: filtered.length > 0 ? ((completed / filtered.length) * 100).toFixed(1) : 0,
+    byPriority: {
+      high: filtered.filter(t => t.priority === 'high').length,
+      medium: filtered.filter(t => t.priority === 'medium').length,
+      low: filtered.filter(t => t.priority === 'low').length,
+      none: filtered.filter(t => !t.priority).length
+    },
+    byStatus: {
+      completed,
+      pending
+    },
+    byCategory: {},
+    averageTasksPerDay: 0,
+    tasks: filtered
+  };
+
+  // Calculate by category
+  filtered.forEach(task => {
+    const cat = task.category || 'Uncategorized';
+    report.byCategory[cat] = (report.byCategory[cat] || 0) + 1;
+  });
+
+  // Calculate average tasks per day
+  if (report.period.daysIncluded > 0) {
+    report.averageTasksPerDay = (filtered.length / report.period.daysIncluded).toFixed(1);
+  }
+
+  return report;
+};
+
+/**
+ * Import tasks from JSON backup file
+ */
+export const importFromJSON = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      try {
+        const content = event.target.result;
+        const backup = JSON.parse(content);
+
+        if (!backup.data || !Array.isArray(backup.data.tasks)) {
+          throw new Error('Invalid backup file format');
+        }
+
+        resolve(backup.data);
+      } catch (error) {
+        reject(new Error(`Failed to import backup: ${error.message}`));
+      }
+    };
+
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsText(file);
+  });
+};
+
+/**
+ * Import tasks from CSV file (basic parsing)
+ */
+export const importFromCSV = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      try {
+        const content = event.target.result;
+        const lines = content.split('\n');
+
+        if (lines.length < 2) {
+          throw new Error('CSV file is empty or invalid');
+        }
+
+        // Skip header and parse rows
+        const tasks = [];
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          // Basic CSV parsing (handles quoted fields)
+          const parts = parseCSVLine(line);
+          if (parts.length >= 2) {
+            tasks.push({
+              id: parts[0] || `task-${Date.now()}-${i}`,
+              text: parts[1],
+              completed: parts[2]?.toLowerCase() === 'completed',
+              priority: parts[3] || 'medium',
+              category: parts[4] || 'general',
+              dueDate: parts[6] || null,
+              assignee: parts[7] || null,
+              description: parts[8] || '',
+              subtasks: [],
+              comments: [],
+              createdAt: new Date().toISOString()
+            });
+          }
+        }
+
+        resolve(tasks);
+      } catch (error) {
+        reject(new Error(`Failed to import CSV: ${error.message}`));
+      }
+    };
+
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsText(file);
+  });
+};
+
+/**
+ * Import tasks from PDF file
+ */
+export const importFromPDF = (file) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const reader = new FileReader();
+
+      reader.onload = async (event) => {
+        try {
+          const arrayBuffer = event.target.result;
+          
+          // Since we can't use pdfjs-dist, we'll use a simple approach:
+          // Try to extract text from PDF or provide helpful feedback
+          const tasks = await extractTasksFromPDFBuffer(arrayBuffer, file.name);
+          
+          if (tasks.length === 0) {
+            reject(new Error(
+              'No tasks found in PDF. Please ensure your PDF contains task data in a recognized format. '
+              + 'You can export a sample PDF from the app to see the expected format.'
+            ));
+            return;
+          }
+          
+          resolve(tasks);
+        } catch (error) {
+          reject(new Error(`Failed to parse PDF: ${error.message}. Try using CSV or JSON format instead.`));
+        }
+      };
+
+      reader.onerror = () => reject(new Error('Failed to read PDF file'));
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+/**
+ * Extract text from PDF buffer (simplified approach without pdfjs-dist)
+ */
+const extractTasksFromPDFBuffer = async (arrayBuffer, fileName) => {
+  const tasks = [];
+  
+  // Convert array buffer to string (works for text-based PDFs)
+  const view = new Uint8Array(arrayBuffer);
+  let text = '';
+  
+  try {
+    // Try to decode as UTF-8
+    const decoder = new TextDecoder();
+    text = decoder.decode(view);
+  } catch (e) {
+    // Fallback: try to extract visible characters
+    for (let i = 0; i < view.length; i++) {
+      const char = view[i];
+      // Keep printable ASCII and common UTF-8 characters
+      if ((char >= 32 && char <= 126) || char === 10 || char === 13) {
+        text += String.fromCharCode(char);
+      }
+    }
+  }
+
+  // Parse text to extract tasks
+  if (text.length > 0) {
+    return parseTasksFromText(text);
+  }
+  
+  return tasks;
+};
+
+/**
+ * Parse tasks from plain text (from PDF or other sources)
+ */
+const parseTasksFromText = (text) => {
+  const tasks = [];
+  const lines = text.split('\n');
+  let currentTask = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Skip empty lines and headers
+    if (!line || line.includes('Task') || line.includes('===') || line.includes('---')) {
+      continue;
+    }
+
+    // Match task lines: "1. [✓] Task title" or "1. [ ] Task title"
+    const taskMatch = line.match(/^\d+\.\s*\[(✓|×|\s)\]\s+(.+)$|^\d+\.\s+(.+)$|^[-•]\s+(.+)$/);
+
+    if (taskMatch) {
+      // Save previous task if exists
+      if (currentTask) {
+        tasks.push(currentTask);
+      }
+
+      // Create new task
+      const completed = taskMatch[1] === '✓';
+      const taskText = taskMatch[2] || taskMatch[3] || taskMatch[4];
+
+      currentTask = {
+        id: `task-${Date.now()}-${tasks.length}`,
+        text: taskText.trim(),
+        completed: completed,
+        priority: extractPriority(taskText),
+        category: extractCategory(taskText),
+        dueDate: extractDueDate(taskText),
+        assignee: extractAssignee(taskText),
+        description: '',
+        subtasks: [],
+        comments: [],
+        createdAt: new Date().toISOString()
+      };
+    } else if (currentTask && line.length > 0) {
+      // Add to current task's description or metadata
+      if (line.toLowerCase().includes('due') || line.toLowerCase().includes('date')) {
+        const dateMatch = line.match(/\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{2}-\d{2}/);
+        if (dateMatch && !currentTask.dueDate) {
+          currentTask.dueDate = dateMatch[0];
+        }
+      } else if (line.toLowerCase().includes('priority')) {
+        const priorityMatch = line.match(/(high|medium|low)/i);
+        if (priorityMatch && !currentTask.priority) {
+          currentTask.priority = priorityMatch[1].toLowerCase();
+        }
+      } else if (line.toLowerCase().includes('category')) {
+        const categoryMatch = line.match(/category:\s*([\w]+)/i);
+        if (categoryMatch && !currentTask.category) {
+          currentTask.category = categoryMatch[1].toLowerCase();
+        }
+      } else if (line.toLowerCase().includes('assigned') || line.toLowerCase().includes('assignee')) {
+        const assignMatch = line.match(/:\s*(.+)$/);
+        if (assignMatch && !currentTask.assignee) {
+          currentTask.assignee = assignMatch[1].trim();
+        }
+      } else {
+        // Add to description
+        if (currentTask.description) {
+          currentTask.description += '\n' + line;
+        } else {
+          currentTask.description = line;
+        }
+      }
+    }
+  }
+
+  // Don't forget the last task
+  if (currentTask) {
+    tasks.push(currentTask);
+  }
+
+  return tasks;
+};
+
+/**
+ * Extract priority from task text
+ */
+const extractPriority = (text) => {
+  if (/\b(high|urgent|critical)\b/i.test(text)) return 'high';
+  if (/\b(medium|normal|standard)\b/i.test(text)) return 'medium';
+  if (/\b(low|minor|trivial)\b/i.test(text)) return 'low';
+  return 'medium';
+};
+
+/**
+ * Extract category from task text
+ */
+const extractCategory = (text) => {
+  if (/\b(work|job|project)\b/i.test(text)) return 'work';
+  if (/\b(personal|home|life)\b/i.test(text)) return 'personal';
+  if (/\b(idea|thought|brainstorm)\b/i.test(text)) return 'ideas';
+  return 'general';
+};
+
+/**
+ * Extract due date from task text
+ */
+const extractDueDate = (text) => {
+  const dateMatch = text.match(/\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{2}-\d{2}/);
+  if (dateMatch) {
+    return dateMatch[0];
+  }
+  return null;
+};
+
+/**
+ * Extract assignee from task text
+ */
+const extractAssignee = (text) => {
+  const assignMatch = text.match(/@(\w+)|Assigned to:\s*(\w+)/i);
+  return assignMatch ? (assignMatch[1] || assignMatch[2]) : null;
+};
+
+/**
+ * Helper function to parse CSV lines (handles quoted fields)
+ */
+const parseCSVLine = (line) => {
+  const result = [];
+  let current = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+
+    if (char === '"') {
+      if (insideQuotes && nextChar === '"') {
+        current += '"';
+        i++;
+      } else {
+        insideQuotes = !insideQuotes;
+      }
+    } else if (char === ',' && !insideQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  result.push(current.trim());
+  return result;
+};
+
+/**
+ * Helper function to download files
+ */
+const downloadFile = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+/**
+ * Share tasks as formatted text (for clipboard/email)
+ */
+export const shareTasksAsText = (tasks) => {
+  if (!tasks || tasks.length === 0) {
+    return 'No tasks to share';
+  }
+
+  const completed = tasks.filter(t => t.completed).length;
+  const pending = tasks.filter(t => !t.completed).length;
+  const completionRate = ((completed / tasks.length) * 100).toFixed(1);
+
+  const text = [
+    '╔════════════════════════════════════════╗',
+    '║      ZENFLOW TASK REPORT               ║',
+    '╚════════════════════════════════════════╝',
+    '',
+    `📊 SUMMARY`,
+    `├─ Total Tasks: ${tasks.length}`,
+    `├─ ✓ Completed: ${completed}`,
+    `├─ ○ Pending: ${pending}`,
+    `└─ Completion Rate: ${completionRate}%`,
+    '',
+    `📅 Generated: ${new Date().toLocaleString()}`,
+    '',
+    '─────────────────────────────────────────',
+    'TASKS',
+    '─────────────────────────────────────────',
+    '',
+    ...tasks.map((task, idx) => {
+      const statusIcon = task.completed ? '✓' : '○';
+      const priorityEmoji = {
+        high: '🔴',
+        medium: '🟡',
+        low: '🟢'
+      }[task.priority] || '⚪';
+
+      const dueInfo = task.dueDate 
+        ? ` | Due: ${new Date(task.dueDate).toLocaleDateString()}`
+        : '';
+
+      return [
+        `${idx + 1}. [${statusIcon}] ${task.text} ${priorityEmoji}`,
+        task.description ? `   📝 ${task.description.split('\n')[0]}` : '',
+        dueInfo ? `   ${dueInfo}` : '',
+        task.subtasks?.length > 0 ? `   Subtasks: ${task.subtasks.length}` : ''
+      ].filter(Boolean).join('\n');
+    }),
+    '',
+    '─────────────────────────────────────────',
+    'Generated by Zenflow Task Manager',
+    '─────────────────────────────────────────'
+  ].join('\n');
+
+  return text;
+};

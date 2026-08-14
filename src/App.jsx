@@ -14,6 +14,7 @@ import EisenhowerMatrix from './components/EisenhowerMatrix';
 import Dashboard from './components/Dashboard';
 import Profile from './components/Profile';
 import Settings from './components/Settings';
+import ExportReporting from './components/ExportReporting';
 
 // Import Overlays
 import ToastContainer from './components/ToastContainer';
@@ -86,6 +87,7 @@ export default function App() {
                   {activeView === 'calendar' && <CalendarView />}
                   {activeView === 'matrix' && <EisenhowerMatrix />}
                   {activeView === 'dashboard' && <Dashboard />}
+                  {activeView === 'export' && <ExportReporting />}
                   {activeView === 'profile' && <Profile />}
                   {activeView === 'settings' && <Settings />}
                 </motion.div>

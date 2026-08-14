@@ -464,10 +464,6 @@ body:not(.theme-lightblue):not(.theme-lightpurple) .mesh-readable {
   text-shadow: none;
 }
 
-body:not(.theme-lightblue):not(.theme-lightpurple) [class*="shadow-[0_0_"],
-body:not(.theme-lightblue):not(.theme-lightpurple) [class*="shadow-accent"] {
-  box-shadow: none;
-}
 
 body:not(.theme-lightblue):not(.theme-lightpurple) .border-bmain {
   border-color: rgba(255, 255, 255, 0.2);
